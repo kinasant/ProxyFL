@@ -541,7 +541,7 @@ class Trainer(object):
             self.train = train_avg
         elif args.algorithm == 'AvgPush':
             self.train = train_avg_push
-        elif args.algorithm == 'SecureAvg':
+        elif args.algorithm == 'SecureFedAvg':
             self.train = train_secure_fed_avg
         else:
             raise ValueError("Unknown training method")
