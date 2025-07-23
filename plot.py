@@ -12,6 +12,7 @@ plt.switch_backend('agg')
 
 parser = argparse.ArgumentParser(description='plot script')
 parser.add_argument('--dataset', type=str, default='mnist')
+parser.add_argument('--algorithm', default='["AvgPush","SecureFedAvg","ProxyFL"]',)
 parser.add_argument('--n_runs', type=int, default=5)  # number of trials
 parser.add_argument("--partition_type", help="Type of data partition.",
                     type=str, default="class")
@@ -65,8 +66,8 @@ result_path = os.path.join(args.result_path,
                            f'n_rounds_{args.n_rounds}',
                            )
 
-algorithms = ['Regular', 'Joint', 'FedAvg', 'AvgPush', 'FML', 'ProxyFL']
-assert algorithms[0] == 'Regular' and algorithms[1] == 'Joint'
+import ast
+algorithms = ast.literal_eval(args.algorithm)
 labels = []
 
 all_accuracies = []
