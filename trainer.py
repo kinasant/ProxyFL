@@ -83,7 +83,8 @@ def train_secure_fed_avg(client, eval_data, comm, logger, args):
         mpi_local_privacy_budgets[r] = client.privacy_budget
         
         if args.verbose:
-            logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f} | ε={client.privacy_budget:.2f}")
+            if r%10==0:
+                logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f} | ε={client.privacy_budget:.2f}")
         
         comm_start_time = time.time()
         secure_avg(client.proxy_model, comm, args.n_clients)
