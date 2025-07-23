@@ -124,10 +124,11 @@ def train_avg(client, eval_data, comm, logger, args):
         mpi_local_privacy_budgets[r] = client.privacy_budget
 
         if args.verbose:
-            if args.use_private_SGD:
-                logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f} | ε={client.privacy_budget:.2f}")
-            else:
-                logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f}")
+            if r%10==0:
+                if args.use_private_SGD:
+                    logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f} | ε={client.privacy_budget:.2f}")
+                else:
+                    logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f}")
 
         comm.Barrier()  # for accurate comm time measurement
         comm_start_time = time.time()
@@ -189,10 +190,11 @@ def train_avg_push(client, eval_data, comm, logger, args):
         mpi_local_privacy_budgets[r] = client.privacy_budget
 
         if args.verbose:
-            if args.use_private_SGD:
-                logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f} | ε={client.privacy_budget:.2f}")
-            else:
-                logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f}")
+            if r%10==0:
+                if args.use_private_SGD:
+                    logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f} | ε={client.privacy_budget:.2f}")
+                else:
+                    logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f}")
 
         source = (comm.rank - rota[r % len(rota)]) % args.n_clients
         dest = (comm.rank + rota[r % len(rota)]) % args.n_clients
@@ -244,15 +246,16 @@ def train_fml(client, eval_data, comm, logger, args):
         mpi_local_privacy_budgets[r] = client.privacy_budget
 
         if args.verbose:
-            if args.use_private_SGD:
-                logger.info(f"Round {r}, Client {comm.rank}:" +
-                            f" Private acc={private_accuracy:.4f} |" +
-                            f" Proxy acc={proxy_accuracy:.4f} |" +
-                            f" ε={client.privacy_budget:.2f}")
-            else:
-                logger.info(f"Round {r}, Client {comm.rank}:" +
-                            f" Private acc={private_accuracy:.4f} |" +
-                            f" Proxy acc={proxy_accuracy:.4f}")
+            if r%10==0:
+                if args.use_private_SGD:
+                    logger.info(f"Round {r}, Client {comm.rank}:" +
+                                f" Private acc={private_accuracy:.4f} |" +
+                                f" Proxy acc={proxy_accuracy:.4f} |" +
+                                f" ε={client.privacy_budget:.2f}")
+                else:
+                    logger.info(f"Round {r}, Client {comm.rank}:" +
+                                f" Private acc={private_accuracy:.4f} |" +
+                                f" Proxy acc={proxy_accuracy:.4f}")
         comm.Barrier()  # for accurate comm time measurement
         comm_start_time = time.time()
         all_model_weights = comm.gather(utils.extract_numpy_weights(client.proxy_model),
@@ -321,17 +324,18 @@ def train_proxy_push(client, eval_data, comm, logger, args):
         source = (comm.rank - rota[r % len(rota)]) % args.n_clients
         dest = (comm.rank + rota[r % len(rota)]) % args.n_clients
         if args.verbose:
-            if args.use_private_SGD:
-                logger.info(f"Round {r}, Client {comm.rank}:" +
-                            f" Private acc={private_accuracy:.4f}" +
-                            f" | Proxy acc={proxy_accuracy:.4f}" +
-                            f" | ε={client.privacy_budget:.2f}" +
-                            f" | Sending to {dest}, receiving from {source}")
-            else:
-                logger.info(f"Round {r}, Client {comm.rank}:" +
-                            f" Private acc={private_accuracy:.4f}" +
-                            f" | Proxy acc={proxy_accuracy:.4f}" +
-                            f" | Sending to {dest}, receiving from {source}")
+            if r%10==0:
+                if args.use_private_SGD:
+                    logger.info(f"Round {r}, Client {comm.rank}:" +
+                                f" Private acc={private_accuracy:.4f}" +
+                                f" | Proxy acc={proxy_accuracy:.4f}" +
+                                f" | ε={client.privacy_budget:.2f}" +
+                                f" | Sending to {dest}, receiving from {source}")
+                else:
+                    logger.info(f"Round {r}, Client {comm.rank}:" +
+                                f" Private acc={private_accuracy:.4f}" +
+                                f" | Proxy acc={proxy_accuracy:.4f}" +
+                                f" | Sending to {dest}, receiving from {source}")
 
         comm.Barrier()  # for accurate comm time measurement
         comm_start_time = time.time()
@@ -376,10 +380,11 @@ def train_regular(client, eval_data, comm, logger, args):
         local_privacy_budget[r] = client.privacy_budget
 
         if args.verbose:
-            if args.use_private_SGD:
-                logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={eval_acc[r]:.4f} | ε={client.privacy_budget:.2f}")
-            else:
-                logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={eval_acc[r]:.4f}")
+            if r%10==0:
+                if args.use_private_SGD:
+                    logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={eval_acc[r]:.4f} | ε={client.privacy_budget:.2f}")
+                else:
+                    logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={eval_acc[r]:.4f}")
 
     # Collect all results
     comm.Gather(eval_acc, proxy_accuracies, root=0)
