@@ -10,6 +10,9 @@ from trainer import Trainer
 from privacy_checker import check_privacy
 import utils
 
+import warnings
+warnings.filterwarnings("ignore")
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", help="Name of the dataset: [mnist, fashion-mnist, cifar10].",
                     type=str, choices=['mnist', 'fashion-mnist', 'cifar10'], default="mnist")
