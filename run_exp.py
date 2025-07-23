@@ -14,8 +14,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", help="Name of the dataset: [mnist, fashion-mnist, cifar10].",
                     type=str, choices=['mnist', 'fashion-mnist', 'cifar10'], default="mnist")
 parser.add_argument("--algorithm",
-                    help="Algorithm: ['Regular', 'Joint', 'FedAvg', 'AvgPush', 'FML', 'ProxyFL'].",
-                    type=str, choices=['Regular', 'Joint', 'FedAvg', 'AvgPush', 'FML', 'ProxyFL'],
+                    help="Algorithm: ['Regular', 'Joint', 'FedAvg', 'AvgPush', 'FML', 'ProxyFL','SecureFedAvg'].",
+                    type=str, choices=['Regular', 'Joint', 'FedAvg', 'AvgPush', 'FML', 'ProxyFL','SecureFedAvg'],
                     default="ProxyFL")
 parser.add_argument("--partition_type", help="Name of the dataset: [iid, class, class-rep].",
                     type=str, choices=['iid', 'class', 'class-rep'], default="class")

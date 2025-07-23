@@ -12,7 +12,93 @@ LogSoftmax = nn.LogSoftmax(dim=-1)
 KL_Loss = nn.KLDivLoss(reduction='batchmean')
 CE_Loss = nn.CrossEntropyLoss()
 
+from mpi4py import MPI
+import numpy as np
+import torch
 
+def secure_avg(model, comm, n_clients):
+    """Securely averages model weights across clients using additive secret sharing."""
+    device = next(model.parameters()).device
+    model_cpu = model.cpu()
+    state_dict = model_cpu.state_dict()
+    
+    
+    keys = [k for k in state_dict.keys() if not k.endswith('num_batches_tracked')]
+    shapes = [state_dict[k].shape for k in keys]
+    sizes = [state_dict[k].numel() for k in keys]
+    total_size = sum(sizes)
+    
+    if total_size == 0:
+        return
+    
+    
+    flat_params = torch.cat([state_dict[k].flatten() for k in keys])
+    
+    
+    shares = [torch.randn_like(flat_params) for _ in range(n_clients - 1)]
+    shares.append(flat_params - sum(shares))  
+    
+    sendbuf = [share.numpy() for share in shares]
+    recvbuf = comm.alltoall(sendbuf)
+    
+
+    t_j = np.zeros_like(recvbuf[0])
+    for share in recvbuf:
+        t_j += share
+    
+
+    T = np.zeros_like(t_j)
+    comm.Allreduce(t_j, T, op=MPI.SUM)
+    
+
+    avg_flat = torch.tensor(T / n_clients, dtype=flat_params.dtype)
+    new_state_dict = {}
+    start_idx = 0
+    for i, key in enumerate(keys):
+        end_idx = start_idx + sizes[i]
+        new_state_dict[key] = avg_flat[start_idx:end_idx].view(shapes[i])
+        start_idx = end_idx
+    
+    
+    state_dict.update(new_state_dict)
+    model_cpu.load_state_dict(state_dict)
+    model_cpu.to(device)
+
+def train_secure_fed_avg(client, eval_data, comm, logger, args):
+    """Training loop with secure federated averaging."""
+    proxy_accuracies = np.empty([args.n_clients, args.n_rounds], dtype=np.float32) if comm.rank == 0 else None
+    privacy_budgets = np.empty([args.n_clients, args.n_rounds], dtype=np.float32) if comm.rank == 0 else None
+    mpi_local_proxy_accuracies = np.zeros(args.n_rounds, dtype=np.float32)
+    mpi_local_privacy_budgets = np.zeros(args.n_rounds, dtype=np.float32)
+    
+    logger.info(f"Hyperparameter setting = {args}")
+    start_time = time.time()
+    comm_time = 0.0
+
+    for r in range(args.n_rounds):
+
+        regular_training_loop(client, None, args)
+        proxy_accuracy = utils.evaluate_model(client.proxy_model, eval_data, args)
+        mpi_local_proxy_accuracies[r] = proxy_accuracy
+        mpi_local_privacy_budgets[r] = client.privacy_budget
+        
+        if args.verbose:
+            logger.info(f"Round {r}, Client {comm.rank}: Proxy acc={proxy_accuracy:.4f} | ε={client.privacy_budget:.2f}")
+        
+        comm_start_time = time.time()
+        secure_avg(client.proxy_model, comm, args.n_clients)
+        comm_time += time.time() - comm_start_time
+
+
+    comm.Gather(mpi_local_proxy_accuracies, proxy_accuracies, root=0)
+    comm.Gather(mpi_local_privacy_budgets, privacy_budgets, root=0)
+    
+    return {
+        "proxy_accuracies": proxy_accuracies,
+        "training_time": time.time() - start_time,
+        "comm_time": comm_time,
+        "privacy_budgets": privacy_budgets
+    }
 def train_avg(client, eval_data, comm, logger, args):
 
     proxy_accuracies = np.empty([args.n_clients, args.n_rounds],
@@ -455,6 +541,8 @@ class Trainer(object):
             self.train = train_avg
         elif args.algorithm == 'AvgPush':
             self.train = train_avg_push
+        elif args.algorithm == 'SecureAvg':
+            self.train = train_secure_fed_avg
         else:
             raise ValueError("Unknown training method")
 
